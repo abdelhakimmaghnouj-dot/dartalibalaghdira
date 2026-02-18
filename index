@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catalogue de Commande en Ligne</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary-color: #f3f4f6;
+            --text-color: #1f2937;
+            --text-light: #6b7280;
+            --border-color: #e5e7eb;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #f9fafb;
+            color: var(--text-color);
+            line-height: 1.6;
+            padding-bottom: 80px; /* Espace pour le bouton panier flottant sur mobile */
+        }
+
+        /* En-tête */
+        header {
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1rem 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        /* Grille de produits */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: #e5e7eb;
+        }
+
+        .product-info {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-desc {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            flex-grow: 1;
+        }
+
+        .product-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .price {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* Bouton Panier Flottant */
+        .cart-float {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--text-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 900;
+            transition: transform 0.2s;
+        }
+
+        .cart-float:hover {
+            transform: scale(1.05);
+        }
+
+        .cart-count {
+            background-color: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Modal / Panneau */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: flex-end; /* Drawer style */
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .drawer {
+            background: white;
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-out;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active .drawer {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        /* Liste du panier */
+        .cart-items {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--secondary-color);
+        }
+
+        .item-details h4 {
+            font-size: 0.95rem;
+        }
+
+        .item-details span {
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+
+        .item-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .qty-btn {
+            background: var(--secondary-color);
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .remove-btn {
+            color: var(--danger-color);
+            background: none;
+            border: none;
+            margin-left: 0.5rem;
+            cursor: pointer;
+        }
+
+        .cart-total {
+            font-size: 1.25rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-top: 1rem;
+            border-top: 2px solid var(--border-color);
+        }
+
+        /* Formulaire */
+        .checkout-form {
+            background: var(--secondary-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+            padding: 1rem;
+            font-size: 1.1rem;
+        }
+
+        /* Notification Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--text-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+            top: 40px;
+        }
+
+        /* Responsive Mobile */
+        @media (max-width: 600px) {
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+            .cart-float {
+                bottom: 1rem;
+                right: 1rem;
+                left: 1rem;
+                justify-content: center;
+                border-radius: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="container header-content">
+            <h1>Ma Boutique</h1>
+            <div style="font-size: 0.9rem; color: var(--text-light);">Livraison & Contact par téléphone</div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div class="products-grid" id="productGrid">
+            <!-- Les produits seront injectés ici par JavaScript -->
+        </div>
+    </main>
+
+    <!-- Floating Cart Button -->
+    <div class="cart-float" onclick="openCart()">
+        <span>🛒 Voir mon panier</span>
+        <div class="cart-count" id="cartCount">0</div>
+    </div>
+
+    <!-- Cart Modal / Drawer -->
+    <div class="modal-overlay" id="cartModal">
+        <div class="drawer">
+            <div class="drawer-header">
+                <h2>Votre Panier</h2>
+                <button class="close-btn" onclick="closeCart()">&times;</button>
+            </div>
+
+            <div class="cart-items" id="cartItems">
+                <!-- Les articles du panier seront ici -->
+                <p style="text-align: center; color: var(--text-light); margin-top: 2rem;">Votre panier est vide.</p>
+            </div>
+
+            <div id="checkoutSection" style="display: none;">
+                <div class="cart-total">
+                    <span>Total</span>
+                    <span id="cartTotal">0.00 €</span>
+                </div>
+
+                <div class="checkout-form">
+                    <h3 style="margin-bottom: 1rem;">Coordonnées de livraison</h3>
+                    <form id="orderForm" onsubmit="submitOrder(event)">
+                        <div class="form-group">
+                            <label for="lastname">Nom</label>
+                            <input type="text" id="lastname" placeholder="Votre nom" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="firstname">Prénom</label>
+                            <input type="text" id="firstname" placeholder="Votre prénom" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Téléphone (pour rappel)</label>
+                            <input type="tel" id="phone" placeholder="06 12 34 56 78" required pattern="[0-9\s\+]*">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <span>📱 Commander sur WhatsApp</span>
+                        </button>
+                        <p style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem; text-align: center;">
+                            Cela ouvrira WhatsApp avec le récapitulatif prêt à envoyer.
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Produit ajouté au panier !</div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // VOTRE NUMÉRO DE TÉLÉPHONE (Format international sans le +, ex: 33612345678)
+        // Pour que le lien fonctionne, remplacez ce numéro par le vôtre.
+        const BUSINESS_PHONE = "212663532643"; 
+        const CURRENCY = "MAD";
+
+        // --- DONNÉES PRODUITS (SIMULATION BASE DE DONNÉES) ---
+        // Vous pouvez modifier cette liste pour changer vos produits
+        const products = [
+            {
+                id: 1,
+                name: "Robe Été Fleurie",
+                price: 29.99,
+                description: "Une robe légère et confortable, parfaite pour les journées ensoleillées. Taille unique.",
+                image: "https://picsum.photos/seed/robe/400/300"
+            },
+            {
+                id: 2,
+                name: "Sac à Main Cuir",
+                price: 45.50,
+                description: "Sac en cuir synthétique de haute qualité avec plusieurs compartiments.",
+                image: "https://picsum.photos/seed/sac/400/300"
+            },
+            {
+                id: 3,
+                name: "Montre Élégance",
+                price: 59.90,
+                description: "Montre bracelet métallique, étanche et élégante pour toutes les occasions.",
+                image: "https://picsum.photos/seed/montre/400/300"
+            },
+            {
+                id: 4,
+                name: "Sneakers Urbaines",
+                price: 34.00,
+                description: "Chaussures de sport confortables avec semelle amortissante.",
+                image: "https://picsum.photos/seed/chaussures/400/300"
+            },
+            {
+                id: 5,
+                name: "Lunettes de Soleil",
+                price: 15.00,
+                description: "Protection UV400 avec un design vintage intemporel.",
+                image: "https://picsum.photos/seed/lunettes/400/300"
+            },
+            {
+                id: 6,
+                name: "Parfum Floral",
+                price: 49.99,
+                description: "50ml de senteurs florales persistantes pour une journée fraîche.",
+                image: "https://picsum.photos/seed/parfum/400/300"
+            }
+        ];
+
+        // --- ÉTAT DU PANIER ---
+        let cart = [];
+
+        // --- FONCTIONS D'AFFICHAGE ---
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProducts();
+            loadCart();
+        });
+
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = products.map(product => `
+                <div class="product-card">
+                    <img src="${product.image}" alt="${product.name}" class="product-image" loading="lazy">
+                    <div class="product-info">
+                        <h3 class="product-title">${product.name}</h3>
+                        <p class="product-desc">${product.description}</p>
+                        <div class="product-footer">
+                            <span class="price">${formatPrice(product.price)}</span>
+                            <button class="btn btn-primary" onclick="addToCart(${product.id})">
+                                Ajouter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- GESTION DU PANIER ---
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const existingItem = cart.find(item => item.id === productId);
+
+            if (existingItem) {
+                existingItem.qty++;
+            } else {
+                cart.push({ ...product, qty: 1 });
+            }
+
+            saveCart();
+            updateCartUI();
+            showToast(`"${product.name}" ajouté au panier`);
+            
+            // Ouvrir le panier automatiquement au premier ajout pour feedback immédiat
+            if (cart.length === 1 && cart[0].qty === 1) {
+                // Optionnel : openCart(); 
+            }
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            saveCart();
+            updateCartUI();
+        }
+
+        function updateQty(productId, change) {
+            const item = cart.find(i => i.id === productId);
+            if (item) {
+                item.qty += change;
+                if (item.qty <= 0) {
+                    removeFromCart(productId);
+                } else {
+                    saveCart();
+                    updateCartUI();
+                }
+            }
+        }
+
+        function updateCartUI() {
+            // Mise à jour du compteur
+            const totalQty = cart.reduce((acc, item) => acc + item.qty, 0);
+            document.getElementById('cartCount').textContent = totalQty;
+
+            // Mise à jour de la liste
+            const cartItemsContainer = document.getElementById('cartItems');
+            const checkoutSection = document.getElementById('checkoutSection');
+
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = '<p style="text-align: center; color: var(--text-light); margin-top: 2rem;">Votre panier est vide.</p>';
+                checkoutSection.style.display = 'none';
+                return;
+            }
+
+            checkoutSection.style.display = 'block';
+            cartItemsContainer.innerHTML = cart.map(item => `
+                <div class="cart-item">
+                    <div class="item-details">
+                        <h4>${item.name}</h4>
+                        <span>${formatPrice(item.price)} x ${item.qty} = <strong>${formatPrice(item.price * item.qty)}</strong></span>
+                    </div>
+                    <div class="item-controls">
+                        <button class="qty-btn" onclick="updateQty(${item.id}, -1)">-</button>
+                        <span>${item.qty}</span>
+                        <button class="qty-btn" onclick="updateQty(${item.id}, 1)">+</button>
+                        <button class="remove-btn" onclick="removeFromCart(${item.id})" title="Supprimer">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Calcul du total
+            const total = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+            document.getElementById('cartTotal').textContent = formatPrice(total);
+        }
+
+        // --- GESTION DU FORMULAIRE ET ENVOI ---
+
+        function submitOrder(e) {
+            e.preventDefault();
+
+            // Récupération des données
+            const lastname = document.getElementById('lastname').value.trim();
+            const firstname = document.getElementById('firstname').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+
+            if (!lastname || !firstname || !phone) {
+                showToast("Veuillez remplir tous les champs.");
+                return;
+            }
+
+            // Construction du message pour WhatsApp
+            let message = `*NOUVELLE COMMANDE* \n\n`;
+            message += `*Client :* ${firstname} ${lastname}\n`;
+            message += `*Téléphone :* ${phone}\n\n`;
+            message += `*Détail de la commande :*\n`;
+
+            let total = 0;
+            cart.forEach(item => {
+                const subtotal = item.price * item.qty;
+                total += subtotal;
+                message += `- ${item.name} (x${item.qty}): ${formatPrice(subtotal)}\n`;
+            });
+
+            message += `\n*TOTAL À PAYER :* ${formatPrice(total)}`;
+            message += `\n\n_Merci de me rappeler pour confirmer la commande._`;
+
+            // Encodage pour URL
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${BUSINESS_PHONE}?text=${encodedMessage}`;
+
+            // Simulation d'ouverture
+            window.open(whatsappUrl, '_blank');
+            
+            // Optionnel : Vider le panier après commande
+            // cart = [];
+            // saveCart();
+            // updateCartUI();
+            // closeCart();
+        }
+
+        // --- UTILITAIRES ---
+
+        function formatPrice(price) {
+            return price.toFixed(2).replace('.', ',') + ' ' + CURRENCY;
+        }
+
+        function openCart() {
+            document.getElementById('cartModal').classList.add('active');
+        }
+
+        function closeCart() {
+            document.getElementById('cartModal').classList.remove('active');
+        }
+
+        // Fermer le modal si on clique dehors
+        document.getElementById('cartModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('cartModal')) {
+                closeCart();
+            }
+        });
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Persistance simple (LocalStorage)
+        function saveCart() {
+            localStorage.setItem('myShopCart', JSON.stringify(cart));
+        }
+
+        function loadCart() {
+            const savedCart = localStorage.getItem('myShopCart');
+            if (savedCart) {
+                cart = JSON.parse(savedCart);
+                updateCartUI();
+            }
+        }
+    </script>
+</body>
+</html>
